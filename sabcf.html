@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ルーレット</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #f4f6f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      text-align: center;
+      background: white;
+      padding: 32px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      width: 320px;
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 28px;
+    }
+
+    .roulette {
+      width: 180px;
+      height: 180px;
+      margin: 24px auto;
+      border-radius: 50%;
+      border: 8px solid #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 48px;
+      font-weight: bold;
+      background: linear-gradient(135deg, #fff, #e9eef3);
+      transition: transform 1s ease-out;
+      user-select: none;
+    }
+
+    .pointer {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    button {
+      padding: 12px 24px;
+      font-size: 18px;
+      border: none;
+      border-radius: 10px;
+      background: #2d7ef7;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1f68d1;
+    }
+
+    button:disabled {
+      background: #9bbcf0;
+      cursor: not-allowed;
+    }
+
+    .result {
+      margin-top: 20px;
+      font-size: 24px;
+      font-weight: bold;
+      min-height: 36px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>ルーレット</h1>
+    <div class="pointer">▼</div>
+    <div class="roulette" id="roulette">?</div>
+    <button id="spinButton">回す</button>
+    <div class="result" id="result"></div>
+  </div>
+
+  <script>
+    const results = ["ASSASBBF", "ASSASBBF", "60", "82", "40"];
+    const roulette = document.getElementById("roulette");
+    const spinButton = document.getElementById("spinButton");
+    const resultText = document.getElementById("result");
+
+    let currentRotation = 0;
+    let spinning = false;
+
+    spinButton.addEventListener("click", () => {
+      if (spinning) return;
+
+      spinning = true;
+      spinButton.disabled = true;
+      resultText.textContent = "";
+
+      const selected = results[Math.floor(Math.random() * results.length)];
+
+      const extraRotation = 360 * (5 + Math.floor(Math.random() * 4));
+      currentRotation += extraRotation;
+
+      roulette.style.transform = `rotate(${currentRotation}deg)`;
+
+      let shuffleIndex = 0;
+      const shuffleTimer = setInterval(() => {
+        roulette.textContent = results[shuffleIndex % results.length];
+        shuffleIndex++;
+      }, 100);
+
+      setTimeout(() => {
+        clearInterval(shuffleTimer);
+        roulette.textContent = selected;
+        resultText.textContent = `結果: ${selected}`;
+        spinButton.disabled = false;
+        spinning = false;
+      }, 1000);
+    });
+  </script>
+</body>
+</html>
