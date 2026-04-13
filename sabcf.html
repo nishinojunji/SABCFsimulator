@@ -1,128 +1,181 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ルーレット</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: sans-serif;
-      background: #f4f6f8;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
-
-    .container {
-      text-align: center;
-      background: white;
-      padding: 32px;
-      border-radius: 16px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-      width: 320px;
-    }
-
-    h1 {
-      margin-top: 0;
-      font-size: 28px;
-    }
-
-    .roulette {
-      width: 180px;
-      height: 180px;
-      margin: 24px auto;
-      border-radius: 50%;
-      border: 8px solid #333;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 48px;
-      font-weight: bold;
-      background: linear-gradient(135deg, #fff, #e9eef3);
-      transition: transform 1s ease-out;
-      user-select: none;
-    }
-
-    .pointer {
-      font-size: 28px;
-      margin-bottom: 8px;
-    }
-
-    button {
-      padding: 12px 24px;
-      font-size: 18px;
-      border: none;
-      border-radius: 10px;
-      background: #2d7ef7;
-      color: white;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background: #1f68d1;
-    }
-
-    button:disabled {
-      background: #9bbcf0;
-      cursor: not-allowed;
-    }
-
-    .result {
-      margin-top: 20px;
-      font-size: 24px;
-      font-weight: bold;
-      min-height: 36px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A,B,C,Fルーレット</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: sans-serif;
+            margin-top: 50px;
+            background-color: #f9f9f9;
+        }
+        
+        /* ルーレットと針を重ねるためのコンテナ */
+        #canvas-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        /* ルーレットの針（CSSで三角形を作成） */
+        #pointer {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 30px solid #ff4444;
+            z-index: 10;
+        }
+        
+        /* 回すボタンのデザイン */
+        button {
+            padding: 12px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        /* 結果表示エリア */
+        #result {
+            margin-top: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>ルーレット</h1>
-    <div class="pointer">▼</div>
-    <div class="roulette" id="roulette">?</div>
-    <button id="spinButton">回す</button>
-    <div class="result" id="result"></div>
-  </div>
 
-  <script>
-    const results = ["ASSASBBF", "ASSASBBF", "60", "82", "40"];
-    const roulette = document.getElementById("roulette");
-    const spinButton = document.getElementById("spinButton");
-    const resultText = document.getElementById("result");
+    <div id="canvas-container">
+        <div id="pointer"></div>
+        <canvas id="roulette" width="300" height="300"></canvas>
+    </div>
+    
+    <button id="spinBtn">回す！</button>
+    <div id="result">結果: -</div>
 
-    let currentRotation = 0;
-    let spinning = false;
+    <script>
+        const canvas = document.getElementById('roulette');
+        const ctx = canvas.getContext('2d');
+        const spinBtn = document.getElementById('spinBtn');
+        const resultDiv = document.getElementById('result');
 
-    spinButton.addEventListener("click", () => {
-      if (spinning) return;
+        // ルーレットの項目と色（自由に書き換え可能です）
+        const items = ['A', 'B', 'C', 'F'];
+        const colors = ['#ff9999', '#99ccff', '#99ff99', '#ffcc99'];
+        
+        let currentAngle = 0; // 現在の角度
+        let isSpinning = false; // 回転中かどうかのフラグ
 
-      spinning = true;
-      spinButton.disabled = true;
-      resultText.textContent = "";
+        // ルーレットを描画する関数
+        function drawRoulette() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = canvas.width / 2;
+            const arc = (2 * Math.PI) / items.length; // 1項目あたりの角度
 
-      const selected = results[Math.floor(Math.random() * results.length)];
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const extraRotation = 360 * (5 + Math.floor(Math.random() * 4));
-      currentRotation += extraRotation;
+            for (let i = 0; i < items.length; i++) {
+                const angle = currentAngle + i * arc;
+                
+                // 扇形の描画
+                ctx.beginPath();
+                ctx.fillStyle = colors[i];
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, angle, angle + arc, false);
+                ctx.lineTo(centerX, centerY);
+                ctx.fill();
+                
+                // 境界線
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
 
-      roulette.style.transform = `rotate(${currentRotation}deg)`;
+                // テキストの描画
+                ctx.save();
+                ctx.fillStyle = '#333333';
+                ctx.font = 'bold 32px sans-serif';
+                // テキストの位置を中心に近づける（radius * 0.6 の部分で調整）
+                ctx.translate(
+                    centerX + Math.cos(angle + arc / 2) * radius * 0.6,
+                    centerY + Math.sin(angle + arc / 2) * radius * 0.6
+                );
+                // テキストの向きを扇形に合わせる
+                ctx.rotate(angle + arc / 2 + Math.PI / 2);
+                ctx.fillText(items[i], -ctx.measureText(items[i]).width / 2, 10);
+                ctx.restore();
+            }
+        }
 
-      let shuffleIndex = 0;
-      const shuffleTimer = setInterval(() => {
-        roulette.textContent = results[shuffleIndex % results.length];
-        shuffleIndex++;
-      }, 100);
+        // ルーレットを回すアニメーション関数
+        function spin() {
+            if (isSpinning) return;
+            isSpinning = true;
+            spinBtn.disabled = true;
+            resultDiv.innerText = "結果: 抽選中...";
 
-      setTimeout(() => {
-        clearInterval(shuffleTimer);
-        roulette.textContent = selected;
-        resultText.textContent = `結果: ${selected}`;
-        spinButton.disabled = false;
-        spinning = false;
-      }, 1000);
-    });
-  </script>
+            // ランダムな初期速度（回る長さが毎回変わる）
+            let spinVelocity = Math.random() * 0.2 + 0.4; 
+            const deceleration = 0.985; // 摩擦（減衰率）。1に近いほど長く回る
+
+            function animate() {
+                currentAngle += spinVelocity;
+                spinVelocity *= deceleration;
+                
+                drawRoulette();
+
+                // 速度が十分に落ちたら停止
+                if (spinVelocity > 0.002) {
+                    requestAnimationFrame(animate);
+                } else {
+                    isSpinning = false;
+                    spinBtn.disabled = false;
+                    determineResult();
+                }
+            }
+            animate();
+        }
+
+        // 停止後にどの項目が上（針の位置）にあるかを判定する関数
+        function determineResult() {
+            // 現在の角度を 0 〜 2π の範囲に正規化
+            const normalizedAngle = currentAngle % (2 * Math.PI);
+            const arc = (2 * Math.PI) / items.length;
+            
+            // キャンバスは右（3時方向）が0度。
+            // 針は上（12時方向、270度 = 1.5π）にあるため、そこから逆算してインデックスを求める
+            const pointerAngle = (1.5 * Math.PI - normalizedAngle + 2 * Math.PI) % (2 * Math.PI);
+            const winningIndex = Math.floor(pointerAngle / arc);
+            
+            resultDiv.innerText = `結果: ${items[winningIndex]}`;
+        }
+
+        // ページ読み込み時の最初の描画
+        drawRoulette();
+        
+        // ボタンをクリックした時のイベント
+        spinBtn.addEventListener('click', spin);
+    </script>
 </body>
 </html>
